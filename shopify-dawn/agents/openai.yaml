@@ -1,0 +1,4 @@
+interface:
+  display_name: "Shopify Dawn"
+  short_description: "Customize and debug Shopify Dawn themes."
+  default_prompt: "Use $shopify-dawn to add this section to my Dawn product page."

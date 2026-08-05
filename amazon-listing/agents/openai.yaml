@@ -1,0 +1,4 @@
+interface:
+  display_name: "Amazon Listing"
+  short_description: "Create and optimize Amazon listing content."
+  default_prompt: "Use $amazon-listing to audit this Amazon listing and propose better copy."

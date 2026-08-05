@@ -1,0 +1,4 @@
+interface:
+  display_name: "Amazon Ads Optimizer"
+  short_description: "Analyze Amazon Ads reports and produce optimization actions."
+  default_prompt: "Analyze my Amazon Ads report and recommend bid changes, negative keywords, keyword expansion, and budget adjustments."

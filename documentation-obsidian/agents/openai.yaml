@@ -1,0 +1,4 @@
+interface:
+  display_name: "Documentation / Obsidian"
+  short_description: "Write and organize Markdown knowledge docs."
+  default_prompt: "Use $documentation-obsidian to turn these notes into an Obsidian-ready document."

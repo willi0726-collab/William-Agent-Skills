@@ -1,0 +1,4 @@
+interface:
+  display_name: "n8n Automation"
+  short_description: "Design and review n8n automation workflows."
+  default_prompt: "Use $n8n-automation to design an n8n workflow for this process."

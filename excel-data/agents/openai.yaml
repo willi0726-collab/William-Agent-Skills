@@ -1,0 +1,4 @@
+interface:
+  display_name: "Excel Data"
+  short_description: "Analyze, clean, and validate spreadsheet data."
+  default_prompt: "Use $excel-data to inspect this workbook and summarize the key issues."

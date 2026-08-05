@@ -1,0 +1,4 @@
+interface:
+  display_name: "Image Prompt Batch"
+  short_description: "Create structured batches of image prompts."
+  default_prompt: "Use $image-prompt-batch to create 30 product image prompts in a CSV-ready table."

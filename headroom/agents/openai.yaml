@@ -1,0 +1,4 @@
+interface:
+  display_name: "Headroom"
+  short_description: "Use and verify the local Headroom compression CLI."
+  default_prompt: "Use $headroom to check the local Headroom install and propose the safest next step."

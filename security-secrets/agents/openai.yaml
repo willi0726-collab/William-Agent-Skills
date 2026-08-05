@@ -1,0 +1,4 @@
+interface:
+  display_name: "Security & Secrets"
+  short_description: "Review and protect credentials and secrets."
+  default_prompt: "Use $security-secrets to review this project for leaked secrets."

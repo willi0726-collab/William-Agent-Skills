@@ -1,0 +1,4 @@
+interface:
+  display_name: "Competitor Analysis"
+  short_description: "Compare competitors with sourced findings."
+  default_prompt: "Use $competitor-analysis to compare these competitors and recommend actions."
