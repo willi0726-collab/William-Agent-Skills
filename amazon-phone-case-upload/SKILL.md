@@ -5,7 +5,7 @@ description: Use when generating Amazon bulk upload spreadsheets for phone cases
 
 # Amazon Phone Case Bulk Upload
 
-Use this skill for Amazon Seller Central flat files for phone cases with `SizeName` or `ColorName-SizeName` variation themes.
+Use this skill for Amazon Seller Central phone-case flat files. Treat every downloaded workbook as a versioned schema, not as a fixed layout.
 
 ## Use When
 
@@ -18,19 +18,28 @@ Use this skill for Amazon Seller Central flat files for phone cases with `SizeNa
 
 - Use the downloaded Amazon template copy only.
 - Load the workbook in normal write mode, not `read_only=True`.
-- Build the column map from template header row 3.
-- Parent row is row 4; children start at row 5.
-- For model-only listings, use `SizeName`.
-- For model + color listings, use `ColorName-SizeName`.
+- Read `labelRow`, `attributeRow`, and `dataRow` from the template `settings=` string. Fall back to legacy rows 2/3/4 only when settings are absent.
+- Map fields by the underlying attribute names in `attributeRow`; never rely on Excel column letters or duplicate display labels.
+- Choose a variation theme from the current template's Dropdown Lists. In the 2026 US cellular-phone-case template, color + model uses `COLOR/COMPATIBLE_PHONE_MODELS`.
 - Child rows must fill both `size_name`/`size_map` and `color_name`/`color_map` when the template has those columns.
 - Always set `parent_child`, `parent_sku`, `relationship_type`, and `variation_theme`.
 - Fill `manufacturer` for parent and every child.
-- Fill `external_product_id_type = GTIN Exemption` and leave `external_product_id` empty.
+- For a GTIN-exempt account, use the current template's valid Product Id Type value. For this workflow the confirmed value is `GTIN Exempt`; leave Product Id blank.
+- Fill `Number of Items = 1`, `Part Number = SKU`, and set Compatible Devices to the exact phone model when those fields exist.
+- Analyze supplied product evidence to fill supported attributes such as Finish Type, Style, Pattern, Theme, material, included components, and special features. Never infer unsupported certifications or performance ratings.
+- Use exact dropdown units from the current template. For this workflow, dimensional units are `Centimeters` and package weight is `Grams`; do not substitute legacy abbreviations such as `CM` or `GR`.
+- When provided, fill both decimal and string thickness fields plus the thickness unit, warranty description, and battery-required status.
+- When product dimensions are confirmed, fill both standalone Item Length and the Item Dimensions length/width/height group with matching `Centimeters` units.
+- Fill Item Highlight (`title_differentiation...`) when present; keep it evidence-backed and within 125 characters.
+- Keep Item Name within 75 characters and backend Generic Keyword within 250 UTF-8 bytes.
+- Offer fields must follow the user's latest instruction. For FBM, use the template's exact fulfillment value, quantity, price, and shipping template. Leave `Skip Offer` blank when an offer is supplied.
+- Use only the current template's exact dropdown display values. In this template, full replacement is `Create or Replace (Full Update)`, not `Full Update`.
+- Preserve VBA with `keep_vba=True` and save the filled `.xlsm` copy before exporting.
 - Export the final upload file as tab-delimited `.txt` with CRLF line endings.
 
 ## Required Field Order
 
-1. `feed_product_type`, `item_sku`, `brand_name`
+1. SKU, Product Type, Brand Name, Listing Action
 2. `item_name`, `manufacturer`, `product_description`
 3. `parent_child`, `parent_sku`, `relationship_type`, `variation_theme`
 4. `size_name`, `size_map`, `color_name`, `color_map`
@@ -38,21 +47,20 @@ Use this skill for Amazon Seller Central flat files for phone cases with `SizeNa
 6. `special_features1`
 7. `form_factor`, `theme`, `pattern_name`, `material_type`
 8. `included_components`, `compatible_phone_models1`
-9. `external_product_id_type`
+9. Product Id fields only when applicable
 10. package dimensions and units
-11. `list_price`, quantity, `condition_type`
+11. offer/fulfillment fields or `Skip Offer`, plus `condition_type`
 12. `country_of_origin`
 
 ## Script
 
-Use `fill_phone_case_template.py` in this folder for the default workflow. Adjust only the CONFIG section: brand, parent SKU, child SKU prefix, colors, models, title text, and output paths.
+Use `fill_phone_case_template.py` for the default workflow. Adjust the CONFIG section and listing content, then run its tests before producing customer files.
 
 ## Pitfalls
 
-- `CELLULAR_PHONE_CASE` is wrong; use `cellularphonecase`
+- Product Type values differ by template generation (`cellularphonecase` in legacy files, `CELLULAR_PHONE_CASE` in the current attribute schema); follow the current template.
 - Parent must have `item_name` and `manufacturer`
 - Child `relationship_type` must be `Variation`
-- Do not put a value in `merchant_shipping_group_name`
-- Export to `.txt`; do not upload `.xlsm`
-- Keep title length within 75 characters
-
+- Do not reuse legacy themes such as `SizeName-ColorName` unless they appear in the current template's allowed values.
+- Do not invent compatibility, protection ratings, charging support, or materials not supported by supplied evidence.
+- Deliver both the preserved `.xlsm` and CRLF `.txt` when the user requests both.
