@@ -93,6 +93,15 @@ class FillTemplateTest(unittest.TestCase):
                 ("Part Number", "part_number[marketplace_id=ATVPDKIKX0DER]#1.value"),
                 ("Compatible Devices", "compatible_devices[marketplace_id=ATVPDKIKX0DER][language_tag=en_US]#1.value"),
                 ("Finish Type", "finish_type[marketplace_id=ATVPDKIKX0DER][language_tag=en_US]#1.value"),
+                ("Item Length", "item_length[marketplace_id=ATVPDKIKX0DER]#1.value"),
+                ("Item Length Unit", "item_length[marketplace_id=ATVPDKIKX0DER]#1.unit"),
+                ("Item Dimension Length", "item_dimensions[marketplace_id=ATVPDKIKX0DER]#1.length.value"),
+                ("Item Dimension Length Unit", "item_dimensions[marketplace_id=ATVPDKIKX0DER]#1.length.unit"),
+                ("Item Dimension Width", "item_dimensions[marketplace_id=ATVPDKIKX0DER]#1.width.value"),
+                ("Item Dimension Width Unit", "item_dimensions[marketplace_id=ATVPDKIKX0DER]#1.width.unit"),
+                ("Item Dimension Height", "item_dimensions[marketplace_id=ATVPDKIKX0DER]#1.height.value"),
+                ("Item Dimension Height Unit", "item_dimensions[marketplace_id=ATVPDKIKX0DER]#1.height.unit"),
+                ("Are batteries required?", "batteries_required[marketplace_id=ATVPDKIKX0DER]#1.value"),
                 ("Pattern", "pattern[marketplace_id=ATVPDKIKX0DER][language_tag=en_US]#1.value"),
                 ("Theme", "theme[marketplace_id=ATVPDKIKX0DER][language_tag=en_US]#1.value"),
                 ("Form Factor", "form_factor[marketplace_id=ATVPDKIKX0DER][language_tag=en_US]#1.value"),
@@ -143,6 +152,10 @@ class FillTemplateTest(unittest.TestCase):
             self.assertEqual(module.PARENT_SKU, sheet.cell(8, columns["item_sku"]).value)
             self.assertEqual("Create or Replace (Full Update)", sheet.cell(8, columns["record_action"]).value)
             self.assertEqual("GTIN Exempt", sheet.cell(8, columns["amzn1.volt.ca.product_id_type"]).value)
+            self.assertTrue(sheet.cell(8, columns["product_description[marketplace_id=ATVPDKIKX0DER][language_tag=en_US]#1.value"]).value)
+            self.assertTrue(sheet.cell(8, columns["bullet_point[marketplace_id=ATVPDKIKX0DER][language_tag=en_US]#1.value"]).value)
+            self.assertEqual("CN", sheet.cell(8, columns["country_of_origin[marketplace_id=ATVPDKIKX0DER]#1.value"]).value)
+            self.assertEqual("No", sheet.cell(8, columns["batteries_required[marketplace_id=ATVPDKIKX0DER]#1.value"]).value)
             self.assertEqual(module.ITEM_HIGHLIGHT, sheet.cell(9, columns["title_differentiation[marketplace_id=ATVPDKIKX0DER][language_tag=en_US]#1.value"]).value)
             self.assertIsNone(sheet.cell(9, columns["skip_offer[marketplace_id=ATVPDKIKX0DER]#1.value"]).value)
             self.assertEqual("Migrated Template", sheet.cell(9, columns["merchant_shipping_group[marketplace_id=ATVPDKIKX0DER]#1.value"]).value)
@@ -154,6 +167,11 @@ class FillTemplateTest(unittest.TestCase):
             self.assertEqual(sheet.cell(9, columns["item_sku"]).value, sheet.cell(9, columns["part_number[marketplace_id=ATVPDKIKX0DER]#1.value"]).value)
             self.assertEqual("iPhone 16", sheet.cell(9, columns["compatible_devices[marketplace_id=ATVPDKIKX0DER][language_tag=en_US]#1.value"]).value)
             self.assertEqual("Matte", sheet.cell(9, columns["finish_type[marketplace_id=ATVPDKIKX0DER][language_tag=en_US]#1.value"]).value)
+            self.assertEqual(4.72, sheet.cell(9, columns["item_length[marketplace_id=ATVPDKIKX0DER]#1.value"]).value)
+            self.assertEqual("Inches", sheet.cell(9, columns["item_length[marketplace_id=ATVPDKIKX0DER]#1.unit"]).value)
+            self.assertEqual(12, sheet.cell(9, columns["item_dimensions[marketplace_id=ATVPDKIKX0DER]#1.length.value"]).value)
+            self.assertEqual(5, sheet.cell(9, columns["item_dimensions[marketplace_id=ATVPDKIKX0DER]#1.width.value"]).value)
+            self.assertEqual(1, sheet.cell(9, columns["item_dimensions[marketplace_id=ATVPDKIKX0DER]#1.height.value"]).value)
             result.close()
 
 

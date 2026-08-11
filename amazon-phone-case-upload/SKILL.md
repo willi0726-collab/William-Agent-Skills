@@ -1,6 +1,6 @@
 ---
 name: amazon-phone-case-upload
-description: Use when generating Amazon bulk upload spreadsheets for phone cases with iPhone model and color/size variations, especially for US marketplace flat files, parent-child SKU setups, GTIN exemption, or template filling.
+description: Use when generating or repairing Amazon phone-case bulk upload spreadsheets and processing summaries, especially for US flat files, parent-child variations, GTIN exemption, invalid dropdown values, missing required fields, or unit-format errors.
 ---
 
 # Amazon Phone Case Bulk Upload
@@ -29,13 +29,35 @@ Use this skill for Amazon Seller Central phone-case flat files. Treat every down
 - Analyze supplied product evidence to fill supported attributes such as Finish Type, Style, Pattern, Theme, material, included components, and special features. Never infer unsupported certifications or performance ratings.
 - Use exact dropdown units from the current template. For this workflow, dimensional units are `Centimeters` and package weight is `Grams`; do not substitute legacy abbreviations such as `CM` or `GR`.
 - When provided, fill both decimal and string thickness fields plus the thickness unit, warranty description, and battery-required status.
-- When product dimensions are confirmed, fill both standalone Item Length and the Item Dimensions length/width/height group with matching `Centimeters` units.
+- Distinguish the two Item Length fields. In this template, standalone `item_length` accepts only `Inches`, so convert centimeters with `inches = centimeters / 2.54`; the Item Dimensions length/width/height group can remain in `Centimeters`.
+- Populate parent-level required fields too: Product Description, at least Bullet Point #1, Country of Origin, and Are batteries required.
 - Fill Item Highlight (`title_differentiation...`) when present; keep it evidence-backed and within 125 characters.
 - Keep Item Name within 75 characters and backend Generic Keyword within 250 UTF-8 bytes.
 - Offer fields must follow the user's latest instruction. For FBM, use the template's exact fulfillment value, quantity, price, and shipping template. Leave `Skip Offer` blank when an offer is supplied.
 - Use only the current template's exact dropdown display values. In this template, full replacement is `Create or Replace (Full Update)`, not `Full Update`.
 - Preserve VBA with `keep_vba=True` and save the filled `.xlsm` copy before exporting.
 - Export the final upload file as tab-delimited `.txt` with CRLF line endings.
+
+## Processing Summary Repair
+
+When Amazon returns a `processing-summary.xlsm`:
+
+1. Read `Feed Processing Summary` and group errors by code, field, and SKU.
+2. Treat the detailed error as the root cause; generic `90041` is often only the row-level failure wrapper.
+3. Read valid values from that same workbook's `Valid Values` or `Dropdown Lists` sheet.
+4. Preserve its dynamic `dataRow`; processing summaries commonly start at row 7 and add three feedback columns.
+5. Clear feedback status/error cells before resubmission and retain the template structure and VBA.
+6. Revalidate every affected row, not only the first SKU.
+
+### Confirmed mappings from real feedback
+
+| Error | Wrong value | Correct handling |
+|---|---|---|
+| `90057` Listing Action | `Full Update` | `Create or Replace (Full Update)` |
+| `90244` standalone Item Length Unit | `Centimeters` | convert cm to inches, unit `Inches` |
+| `90220` parent required fields | blank parent detail fields | fill description, Bullet #1, country, batteries required |
+
+Keep the separate Item Dimensions group in centimeters. Example: 12 cm standalone Item Length becomes `4.72 Inches`, while Item Dimensions can remain `12 × 5 × 1 Centimeters`.
 
 ## Required Field Order
 
