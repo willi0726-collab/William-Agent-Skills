@@ -166,6 +166,11 @@ def fill_template():
     put(ws, data_row, cols, "manufacturer", BRAND)
     put(ws, data_row, cols, "update_delete", "Create or Replace (Full Update)" if latest else None)
     put(ws, data_row, cols, "external_product_id_type", PRODUCT_ID_TYPE if latest else None)
+    if latest:
+        put(ws, data_row, cols, "product_description", DESCRIPTION)
+        put(ws, data_row, cols, "bullet_point1", BULLET1)
+        put(ws, data_row, cols, "country_of_origin", "CN")
+        put(ws, data_row, cols, "batteries_required", BATTERIES_REQUIRED)
 
     row = data_row + 1
     for color_name, color_map, color_suffix, color_word in COLORS:
@@ -188,7 +193,7 @@ def fill_template():
                 "thickness_decimal": ITEM_THICKNESS, "thickness_string": str(ITEM_THICKNESS),
                 "thickness_unit": DIMENSION_UNIT, "warranty": WARRANTY_DESCRIPTION,
                 "batteries_required": BATTERIES_REQUIRED,
-                "item_length": ITEM_LENGTH, "item_length_unit": DIMENSION_UNIT,
+                "item_length": round(ITEM_LENGTH / 2.54, 2), "item_length_unit": "Inches",
                 "item_dimension_length": ITEM_LENGTH, "item_dimension_length_unit": DIMENSION_UNIT,
                 "item_dimension_width": ITEM_WIDTH, "item_dimension_width_unit": DIMENSION_UNIT,
                 "item_dimension_height": ITEM_HEIGHT, "item_dimension_height_unit": DIMENSION_UNIT,
