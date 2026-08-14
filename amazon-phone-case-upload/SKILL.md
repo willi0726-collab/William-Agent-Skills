@@ -21,6 +21,7 @@ Use this skill for Amazon Seller Central phone-case flat files. Treat every down
 - Read `labelRow`, `attributeRow`, and `dataRow` from the template `settings=` string. Fall back to legacy rows 2/3/4 only when settings are absent.
 - Map fields by the underlying attribute names in `attributeRow`; never rely on Excel column letters or duplicate display labels.
 - Choose a variation theme from the current template's Dropdown Lists. In the 2026 US cellular-phone-case template, color + model uses `COLOR/COMPATIBLE_PHONE_MODELS`.
+- Under `COLOR/COMPATIBLE_PHONE_MODELS`, every child must have a unique `(color, compatible phone model)` coordinate. If two physically different styles share a base color, use concise evidence-backed style qualifiers in the customer-facing color value and title; do not submit both as the same `Brown + model` combination.
 - Child rows must fill both `size_name`/`size_map` and `color_name`/`color_map` when the template has those columns.
 - Always set `parent_child`, `parent_sku`, `relationship_type`, and `variation_theme`.
 - Fill `manufacturer` for parent and every child.
@@ -48,6 +49,7 @@ When Amazon returns a `processing-summary.xlsm`:
 4. Preserve its dynamic `dataRow`; processing summaries commonly start at row 7 and add three feedback columns.
 5. Clear feedback status/error cells before resubmission and retain the template structure and VBA.
 6. Revalidate every affected row, not only the first SKU.
+7. For `100730` with near-identical items, compare variation coordinates, titles, and product details across the affected SKUs. A later `13013` can be a downstream offer-attachment failure while the catalog record is still processing; fix the product identity collision first, then resubmit the corrected workbook once.
 
 ### Confirmed mappings from real feedback
 
@@ -56,6 +58,8 @@ When Amazon returns a `processing-summary.xlsm`:
 | `90057` Listing Action | `Full Update` | `Create or Replace (Full Update)` |
 | `90244` standalone Item Length Unit | `Centimeters` | convert cm to inches, unit `Inches` |
 | `90220` parent required fields | blank parent detail fields | fill description, Bullet #1, country, batteries required |
+| `100730` duplicate product details | distinct designs share the same color + compatible model coordinate and near-identical titles | assign evidence-backed style-qualified color/title values so every child coordinate is unique |
+| `13013` offer cannot be added | catalog product is not ready, often downstream of product processing | resolve the product-level issue first, then resubmit the corrected row with its FBM offer |
 
 Keep the separate Item Dimensions group in centimeters. Example: 12 cm standalone Item Length becomes `4.72 Inches`, while Item Dimensions can remain `12 × 5 × 1 Centimeters`.
 
@@ -85,4 +89,5 @@ Use `fill_phone_case_template.py` for the default workflow. Adjust the CONFIG se
 - Child `relationship_type` must be `Variation`
 - Do not reuse legacy themes such as `SizeName-ColorName` unless they appear in the current template's allowed values.
 - Do not invent compatibility, protection ratings, charging support, or materials not supported by supplied evidence.
+- For the confirmed FXFOOT crossbody wallet series, read `references/fxfoot-crossbody-series.md` before mapping AXKB-ZS or XKAXKB-Z images and claims.
 - Deliver both the preserved `.xlsm` and CRLF `.txt` when the user requests both.
