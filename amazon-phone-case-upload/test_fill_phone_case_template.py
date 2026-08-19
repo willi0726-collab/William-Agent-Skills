@@ -8,6 +8,7 @@ import openpyxl
 
 SKILL_DIR = Path(__file__).parent
 SCRIPT = SKILL_DIR / "fill_phone_case_template.py"
+CACHE_SCRIPT = SKILL_DIR / "product_profile_cache.py"
 REQUIRED_HEADERS = [
     "feed_product_type", "item_sku", "brand_name", "parent_child",
     "variation_theme", "item_name", "manufacturer", "update_delete",
@@ -27,6 +28,60 @@ REQUIRED_HEADERS = [
 
 
 class FillTemplateTest(unittest.TestCase):
+    def test_incremental_profile_cache_reuses_unchanged_asset_urls(self):
+        spec = importlib.util.spec_from_file_location("phone_case_profile_cache", CACHE_SCRIPT)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            image = tmp / "Hero.jpg"
+            image.write_bytes(b"same-image")
+            profile_path = tmp / "profile.json"
+            profile = {
+                "schema_version": 1,
+                "product": {"brand": "FXFOOT", "style_code": "YBDJ-CSXD"},
+                "assets": {
+                    "Hero.jpg": {
+                        "sha256": module.file_sha256(image),
+                        "url": "https://example.com/hero.jpg",
+                        "verified": True,
+                        "role": "main",
+                    }
+                },
+            }
+            module.save_profile(profile_path, profile)
+
+            loaded = module.load_profile(profile_path)
+            self.assertEqual(
+                "https://example.com/hero.jpg",
+                module.reusable_asset_url(image, loaded["assets"]["Hero.jpg"]),
+            )
+            image.write_bytes(b"changed-image")
+            self.assertIsNone(module.reusable_asset_url(image, loaded["assets"]["Hero.jpg"]))
+
+    def test_skill_defines_incremental_default_contract(self):
+        text = (SKILL_DIR / "SKILL.md").read_text(encoding="utf-8").lower()
+        for required in (
+            "product profile cache",
+            "content hash",
+            "reuse the verified Cloudinary URL",
+            "analyze only changed or new evidence",
+            "xlsm remains the default deliverable",
+        ):
+            self.assertIn(required.lower(), text)
+
+    def test_defaults_to_workspace_fixed_template_and_no_txt(self):
+        spec = importlib.util.spec_from_file_location("phone_case_defaults", SCRIPT)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        self.assertEqual(
+            Path(r"C:\Users\ZhuanZ\Documents\领星自动化\templates\amazon-phone-case-upload\CELLULAR_PHONE_CASE.xlsm"),
+            Path(module.INPUT_TEMPLATE),
+        )
+        self.assertFalse(module.EXPORT_TXT)
+
     def test_every_color_model_child_gets_commercial_fields(self):
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
@@ -46,15 +101,18 @@ class FillTemplateTest(unittest.TestCase):
             module.MODELS = [("IP16", "iPhone 16", "iPhone 16"), ("IP17", "iPhone 17", "iPhone 17")]
             module.COLORS = [("Pink", "Pink", "PINK", "Pink"), ("Blue", "Blue", "BLUE", "Blue")]
             module.VARIATION_THEME = "ColorName-SizeName"
-            module.fill_template()
+            xlsm_path, txt_path = module.fill_template()
 
             output = Path(module.OUTPUT_DIR) / f"phone_case_{module.BRAND}_{module.PARENT_SKU}.xlsm"
+            self.assertEqual(output, Path(xlsm_path))
+            self.assertIsNone(txt_path)
+            self.assertFalse(output.with_suffix(".txt").exists())
             result = openpyxl.load_workbook(output, data_only=False)
             sheet = result["Template"]
             columns = {sheet.cell(3, c).value: c for c in range(1, sheet.max_column + 1)}
             for row in range(5, 9):
                 self.assertEqual(module.PRICE, sheet.cell(row, columns["list_price"]).value)
-                self.assertEqual("CN", sheet.cell(row, columns["country_of_origin"]).value)
+                self.assertEqual("China", sheet.cell(row, columns["country_of_origin"]).value)
                 self.assertEqual("New", sheet.cell(row, columns["condition_type"]).value)
                 self.assertEqual(module.VARIATION_THEME, sheet.cell(row, columns["variation_theme"]).value)
             result.close()
@@ -154,7 +212,7 @@ class FillTemplateTest(unittest.TestCase):
             self.assertEqual("GTIN Exempt", sheet.cell(8, columns["amzn1.volt.ca.product_id_type"]).value)
             self.assertTrue(sheet.cell(8, columns["product_description[marketplace_id=ATVPDKIKX0DER][language_tag=en_US]#1.value"]).value)
             self.assertTrue(sheet.cell(8, columns["bullet_point[marketplace_id=ATVPDKIKX0DER][language_tag=en_US]#1.value"]).value)
-            self.assertEqual("CN", sheet.cell(8, columns["country_of_origin[marketplace_id=ATVPDKIKX0DER]#1.value"]).value)
+            self.assertEqual("China", sheet.cell(8, columns["country_of_origin[marketplace_id=ATVPDKIKX0DER]#1.value"]).value)
             self.assertEqual("No", sheet.cell(8, columns["batteries_required[marketplace_id=ATVPDKIKX0DER]#1.value"]).value)
             self.assertEqual(module.ITEM_HIGHLIGHT, sheet.cell(9, columns["title_differentiation[marketplace_id=ATVPDKIKX0DER][language_tag=en_US]#1.value"]).value)
             self.assertIsNone(sheet.cell(9, columns["skip_offer[marketplace_id=ATVPDKIKX0DER]#1.value"]).value)

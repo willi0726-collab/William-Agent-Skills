@@ -5,7 +5,7 @@ description: Use when generating or repairing Amazon phone-case bulk upload spre
 
 # Amazon Phone Case Bulk Upload
 
-Use this skill for Amazon Seller Central phone-case flat files. Treat every downloaded workbook as a versioned schema, not as a fixed layout.
+Use this skill for Amazon Seller Central phone-case flat files. Use the fixed workspace template as the default schema and still read its dynamic row settings.
 
 ## Use When
 
@@ -16,7 +16,8 @@ Use this skill for Amazon Seller Central phone-case flat files. Treat every down
 
 ## Core Rules
 
-- Use the downloaded Amazon template copy only.
+- Default to the fixed template at `C:\Users\ZhuanZ\Documents\领星自动化\templates\amazon-phone-case-upload\CELLULAR_PHONE_CASE.xlsm`.
+- Do not select a template from store folders, processing summaries, or prior outputs. Replace the fixed template only when the user explicitly provides a newer template and asks to make it the new default.
 - Load the workbook in normal write mode, not `read_only=True`.
 - Read `labelRow`, `attributeRow`, and `dataRow` from the template `settings=` string. Fall back to legacy rows 2/3/4 only when settings are absent.
 - Map fields by the underlying attribute names in `attributeRow`; never rely on Excel column letters or duplicate display labels.
@@ -29,6 +30,8 @@ Use this skill for Amazon Seller Central phone-case flat files. Treat every down
 - Fill `Number of Items = 1`, `Part Number = SKU`, and set Compatible Devices to the exact phone model when those fields exist.
 - Analyze supplied product evidence to fill supported attributes such as Finish Type, Style, Pattern, Theme, material, included components, and special features. Never infer unsupported certifications or performance ratings.
 - Use exact dropdown units from the current template. For this workflow, dimensional units are `Centimeters` and package weight is `Grams`; do not substitute legacy abbreviations such as `CM` or `GR`.
+- Use the fixed template's dropdown display value `China` for Country of Origin; do not use the code `CN`.
+- Before delivery, compare every populated cell that has a `Valid Values` entry against that template row and reject any non-matching display value.
 - When provided, fill both decimal and string thickness fields plus the thickness unit, warranty description, and battery-required status.
 - Distinguish the two Item Length fields. In this template, standalone `item_length` accepts only `Inches`, so convert centimeters with `inches = centimeters / 2.54`; the Item Dimensions length/width/height group can remain in `Centimeters`.
 - Populate parent-level required fields too: Product Description, at least Bullet Point #1, Country of Origin, and Are batteries required.
@@ -37,7 +40,33 @@ Use this skill for Amazon Seller Central phone-case flat files. Treat every down
 - Offer fields must follow the user's latest instruction. For FBM, use the template's exact fulfillment value, quantity, price, and shipping template. Leave `Skip Offer` blank when an offer is supplied.
 - Use only the current template's exact dropdown display values. In this template, full replacement is `Create or Replace (Full Update)`, not `Full Update`.
 - Preserve VBA with `keep_vba=True` and save the filled `.xlsm` copy before exporting.
-- Export the final upload file as tab-delimited `.txt` with CRLF line endings.
+- Generate only the preserved `.xlsm` by default. Export tab-delimited CRLF `.txt` only when the user explicitly requests TXT.
+
+## Product Profile Cache
+
+Use `product_profile_cache.py` and store one UTF-8 JSON profile per parent/style under `C:\Users\ZhuanZ\Documents\领星自动化\product_profiles\amazon-phone-case-upload`. The profile is the reusable source for product facts, listing copy, model rules, and image mappings; it is not the final upload file.
+
+At the start of each run:
+
+1. Load an existing profile before reading images or regenerating listing copy.
+2. Compute a content hash for each supplied image or ZIP entry.
+3. When the hash matches a cached asset whose `verified` flag is true, reuse the verified Cloudinary URL and cached image role. A cached Hero role remains the main image.
+4. Compare requested facts, template identity, model scope, and source hashes with the profile. Analyze only changed or new evidence; reuse unchanged titles, highlights, bullets, descriptions, search terms, and attributes.
+5. Generate repeated model rows deterministically from the style-level content. Do not ask the model to rewrite identical copy for every child SKU.
+6. After public URL readback and workbook validation pass, atomically save the updated profile. Do not cache failed uploads or unverified URLs.
+
+XLSM remains the default deliverable. The cache reduces repeated analysis and upload work; switching to TXT is not an optimization strategy.
+
+Minimum profile shape:
+
+```json
+{
+  "schema_version": 1,
+  "product": {"brand": "FXFOOT", "parent_sku": "PARENT", "style_code": "STYLE"},
+  "content": {"title_pattern": "...", "bullets": ["..."], "search_terms": "..."},
+  "assets": {"Hero.jpg": {"sha256": "...", "url": "https://...", "verified": true, "role": "main"}}
+}
+```
 
 ## Processing Summary Repair
 
@@ -80,7 +109,7 @@ Keep the separate Item Dimensions group in centimeters. Example: 12 cm standalon
 
 ## Script
 
-Use `fill_phone_case_template.py` for the default workflow. Adjust the CONFIG section and listing content, then run its tests before producing customer files.
+Use `fill_phone_case_template.py` for the fixed-template workflow and `product_profile_cache.py` for incremental reuse. Adjust the CONFIG section and listing content, then run the tests before producing customer files.
 
 ## Pitfalls
 
