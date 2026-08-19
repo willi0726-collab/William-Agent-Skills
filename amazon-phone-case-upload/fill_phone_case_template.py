@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Fill Amazon phone-case .xlsm templates and export upload-ready CRLF .txt."""
+"""Fill the fixed Amazon phone-case .xlsm template; TXT export is opt-in."""
 
 import os
 import re
 import openpyxl
 
-INPUT_TEMPLATE = r"D:\path\to\downloaded_template.xlsm"
+INPUT_TEMPLATE = r"C:\Users\ZhuanZ\Documents\领星自动化\templates\amazon-phone-case-upload\CELLULAR_PHONE_CASE.xlsm"
 OUTPUT_DIR = r"D:\path\to\output"
+EXPORT_TXT = False
 BRAND = "FXFOOT"
 PARENT_SKU = "CAOMEI-DJ-P"
 CHILD_SKU_PREFIX = "CMDJ"
@@ -169,7 +170,7 @@ def fill_template():
     if latest:
         put(ws, data_row, cols, "product_description", DESCRIPTION)
         put(ws, data_row, cols, "bullet_point1", BULLET1)
-        put(ws, data_row, cols, "country_of_origin", "CN")
+        put(ws, data_row, cols, "country_of_origin", "China")
         put(ws, data_row, cols, "batteries_required", BATTERIES_REQUIRED)
 
     row = data_row + 1
@@ -201,7 +202,7 @@ def fill_template():
                 "package_length": PACKAGE_LENGTH, "package_width": PACKAGE_WIDTH, "package_weight": PACKAGE_WEIGHT,
                 "package_height_unit_of_measure": DIMENSION_UNIT, "package_length_unit_of_measure": DIMENSION_UNIT,
                 "package_width_unit_of_measure": DIMENSION_UNIT, "package_weight_unit_of_measure": WEIGHT_UNIT,
-                "country_of_origin": "CN", "quantity": QUANTITY, "price": PRICE, "list_price": PRICE,
+                "country_of_origin": "China", "quantity": QUANTITY, "price": PRICE, "list_price": PRICE,
                 "condition_type": "New", "fulfillment_channel": FULFILLMENT_CHANNEL,
                 "shipping_template": SHIPPING_TEMPLATE, "skip_offer": "Yes" if SKIP_OFFER else None,
             }
@@ -210,11 +211,13 @@ def fill_template():
 
     xlsm_path = os.path.join(OUTPUT_DIR, f"phone_case_{BRAND}_{PARENT_SKU}.xlsm")
     wb.save(xlsm_path)
-    txt_path = os.path.join(OUTPUT_DIR, f"phone_case_{BRAND}_{PARENT_SKU}.txt")
-    with open(txt_path, "w", encoding="utf-8", newline="") as handle:
-        for r in range(1, row):
-            values = [str(ws.cell(r, c).value or "").replace("\t", " ").replace("\r", " ").replace("\n", " ") for c in range(1, ws.max_column + 1)]
-            handle.write("\t".join(values) + "\r\n")
+    txt_path = None
+    if EXPORT_TXT:
+        txt_path = os.path.join(OUTPUT_DIR, f"phone_case_{BRAND}_{PARENT_SKU}.txt")
+        with open(txt_path, "w", encoding="utf-8", newline="") as handle:
+            for r in range(1, row):
+                values = [str(ws.cell(r, c).value or "").replace("\t", " ").replace("\r", " ").replace("\n", " ") for c in range(1, ws.max_column + 1)]
+                handle.write("\t".join(values) + "\r\n")
     wb.close()
     return xlsm_path, txt_path
 
